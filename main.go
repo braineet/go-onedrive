@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	AuthorizationCode = "authorization_code"
 	GrantType         = "grant_type"
+	AuthorizationCode = "authorization_code"
 	ClientId          = "client_id"
 	RedirectUri       = "redirect_uri"
 	ClientSecret      = "client_secret"
+	RefreshToken 	  = "refresh_token"
 	Code              = "code"
 
 	GraphUrl      = "https://graph.microsoft.com/v1.0/"
@@ -36,8 +37,45 @@ func GetTokenWithCode(clientId, redirect, clientSecret, code string) ([]byte, er
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://login.microsoftonline.com/common/oauth2/v2.0/token", strings.NewReader(data.Encode()))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	if err != nil {
+		return nil, errors.New("Failled assemble request" + err.Error())
+	}
 
 	res, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New("Failled exec request" + err.Error())
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.New("Failed to read response's body: " + err.Error())
+	}
+
+	return body, nil
+}
+
+// *****
+// GetTokenWithRefreshToken returns the response from the Microsoft's server, including the token_type, scope, expiration,
+// access_token, refresh_token and id_token.
+// *****
+func GetTokenWithRefreshToken(refreshToken, clientId, redirect, clientSecret string) ([]byte, error) {
+	data := url.Values{}
+	data.Set(GrantType, RefreshToken)
+	data.Set(ClientId, clientId)
+	data.Set(RedirectUri, redirect)
+	data.Set(ClientSecret, clientSecret)
+	data.Set(RefreshToken, refreshToken)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", "https://login.microsoftonline.com/common/oauth2/v2.0/token", strings.NewReader(data.Encode()))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	if err != nil {
+		return nil, errors.New("Failled assemble request" + err.Error())
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New("Failled exec request" + err.Error())
+	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, errors.New("Failed to read response's body: " + err.Error())
@@ -49,7 +87,7 @@ func GetTokenWithCode(clientId, redirect, clientSecret, code string) ([]byte, er
 // *****
 // GetAllFiles returns all the files in a folder. If the folderId is an empty string or "root", it returns all the files in the drive's root.
 // *****
-func GetAllFiles(token, folderId string) ([]byte, error) {
+func GetAllFiles(token, refreshToken, folderId string) ([]byte, error) {
 	data := url.Values{}
 	data.Set(Authorization, "Bearer "+token)
 
@@ -62,7 +100,18 @@ func GetAllFiles(token, folderId string) ([]byte, error) {
 		fullUrl = fmt.Sprintf("%s/drive/root/children", GraphUrl)
 	}
 	req, err := http.NewRequest("POST", fullUrl, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, errors.New("Failled assemble request" + err.Error())
+	}
+
 	res, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New("Failled to exec request " + err.Error())
+	}
+
+	if res.StatusCode == 401 {
+		return nil, errors.New("Expired token")
+	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
