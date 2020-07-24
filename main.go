@@ -15,11 +15,11 @@ const (
 	ClientId          = "client_id"
 	RedirectUri       = "redirect_uri"
 	ClientSecret      = "client_secret"
-	RefreshToken 	  = "refresh_token"
+	RefreshToken      = "refresh_token"
 	Code              = "code"
 
-	GraphUrl      = "https://graph.microsoft.com/v1.0/"
-	Authorization = "Authrozation"
+	GraphUrl      = "https://graph.microsoft.com/v1.0"
+	Authorization = "Authorization"
 )
 
 // *****
@@ -87,10 +87,7 @@ func GetTokenWithRefreshToken(refreshToken, clientId, redirect, clientSecret str
 // *****
 // GetAllFiles returns all the files in a folder. If the folderId is an empty string or "root", it returns all the files in the drive's root.
 // *****
-func GetAllFiles(token, refreshToken, folderId string) ([]byte, error) {
-	data := url.Values{}
-	data.Set(Authorization, "Bearer "+token)
-
+func GetAllFiles(token, folderId string) ([]byte, error) {
 	client := &http.Client{}
 
 	var fullUrl string
@@ -99,7 +96,9 @@ func GetAllFiles(token, refreshToken, folderId string) ([]byte, error) {
 	} else {
 		fullUrl = fmt.Sprintf("%s/drive/root/children", GraphUrl)
 	}
-	req, err := http.NewRequest("POST", fullUrl, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest("GET", fullUrl, nil)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
 	if err != nil {
 		return nil, errors.New("Failled assemble request" + err.Error())
 	}
