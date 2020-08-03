@@ -92,9 +92,9 @@ func GetAllFiles(token, folderId string) ([]byte, error) {
 
 	var fullUrl string
 	if len(folderId) != 0 {
-		fullUrl = fmt.Sprintf("%s/drive/%s/children", GraphUrl, folderId)
+		fullUrl = fmt.Sprintf("%s/me/drive/%s/children", GraphUrl, folderId)
 	} else {
-		fullUrl = fmt.Sprintf("%s/drive/root/children", GraphUrl)
+		fullUrl = fmt.Sprintf("%s/me/drive/root/children", GraphUrl)
 	}
 	req, err := http.NewRequest("GET", fullUrl, nil)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -119,3 +119,40 @@ func GetAllFiles(token, folderId string) ([]byte, error) {
 
 	return body, nil
 }
+
+// *****
+// UploadFile's limit is 4mb. Returns the Onedrive object of the file.
+// *****
+func UploadFile(token, file, folderId string) ([]byte, error) {
+	client := &http.Client{}
+
+	var fullUrl string
+	if len(folderId) != 0 {
+		fullUrl = fmt.Sprintf("%s/me/drive/%s/children", GraphUrl, folderId)
+	} else {
+		fullUrl = fmt.Sprintf("%s/me/drive/root/children", GraphUrl)
+	}
+	req, err := http.NewRequest("PUT", fullUrl, nil)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	if err != nil {
+		return nil, errors.New("Failled assemble request" + err.Error())
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New("Failled to exec request " + err.Error())
+	}
+
+	if res.StatusCode == 401 {
+		return nil, errors.New("Expired token")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.New("Failled to read response's body " + err.Error())
+	}
+
+	return body, nil
+}
+
