@@ -123,12 +123,12 @@ func GetAllFiles(token, folderId string) ([]byte, error) {
 // *****
 // UploadFile's limit is 4mb. Returns the Onedrive object of the file.
 // *****
-func UploadFile(token, file, folderId string) ([]byte, error) {
+func UploadFile(token, file, folderID string) ([]byte, error) {
 	client := &http.Client{}
 
 	var fullUrl string
-	if len(folderId) != 0 {
-		fullUrl = fmt.Sprintf("%s/me/drive/%s/children", GraphUrl, folderId)
+	if len(folderID) != 0 {
+		fullUrl = fmt.Sprintf("%s/me/drive/items/%s/children", GraphUrl, folderID)
 	} else {
 		fullUrl = fmt.Sprintf("%s/me/drive/root/children", GraphUrl)
 	}
