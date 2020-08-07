@@ -92,7 +92,7 @@ func GetAllFiles(token, folderId string) ([]byte, error) {
 
 	var fullUrl string
 	if len(folderId) != 0 {
-		fullUrl = fmt.Sprintf("%s/me/drive/%s/children", GraphUrl, folderId)
+		fullUrl = fmt.Sprintf("%s/me/drive/items/%s/children", GraphUrl, folderId)
 	} else {
 		fullUrl = fmt.Sprintf("%s/me/drive/root/children", GraphUrl)
 	}
